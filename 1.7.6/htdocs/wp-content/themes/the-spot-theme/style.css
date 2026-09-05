@@ -1,0 +1,12 @@
+/*
+Theme Name: The Spot Fast Food Tea
+Author: Aakash Dhungana
+Description: Official theme for The Spot Fast Food and Tea restaurant - Khairahani-08, Parsa, Chitwan, Nepal. Single-page animated site; menu, contact details, hours, reviews and gallery are all editable from the dashboard when the RestaurantPro Manager plugin is active, and fall back to the built-in content when it is not.
+Version: 2.0.0
+Requires at least: 6.0
+Requires PHP: 7.4
+Text Domain: the-spot-theme
+*/
+
+/*  The real stylesheet is assets/main.css (enqueued from functions.php).
+    This file only carries the theme header WordPress requires.            */
