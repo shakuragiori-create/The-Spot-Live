@@ -1,0 +1,183 @@
+.rp-wrap {
+    max-width: 1400px;
+    padding: 20px 0;
+}
+.rp-wrap .card {
+    border-radius: 12px;
+}
+.rp-wrap .card-header {
+    border-radius: 12px 12px 0 0;
+}
+.rp-wrap h1 {
+    font-weight: 700;
+    color: #1e293b;
+}
+.rp-wrap .badge {
+    font-size: 0.75rem;
+    padding: 5px 10px;
+}
+.rp-wrap .table th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+}
+.rp-wrap .btn-primary {
+    background-color: #e67e22;
+    border-color: #e67e22;
+}
+.rp-wrap .btn-primary:hover {
+    background-color: #d35400;
+    border-color: #d35400;
+}
+.rp-wrap .text-primary {
+    color: #e67e22 !important;
+}
+.rp-kot-card .card {
+    transition: transform 0.2s;
+}
+.rp-kot-card .card:hover {
+    transform: translateY(-2px);
+}
+@media print {
+    .rp-wrap .btn,
+    .rp-wrap .nav-tabs,
+    #adminmenu,
+    #wpadminbar,
+    #wpfooter {
+        display: none !important;
+    }
+    .rp-wrap {
+        max-width: 100%;
+    }
+}
+
+/* ==========================================================================
+   Point of Sale
+   ========================================================================== */
+
+.rp-pos-cats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.rp-pos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+    max-height: 62vh;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+.rp-pos-item {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 6px;
+    min-height: 74px;
+    padding: 9px 10px;
+    text-align: left;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
+}
+.rp-pos-item:hover {
+    border-color: #e67e22;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+}
+.rp-pos-item--hit {
+    background: #fff3e5;
+    border-color: #e67e22;
+    transform: scale(0.97);
+}
+.rp-pos-item-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: #1e293b;
+}
+.rp-pos-item-price {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #e67e22;
+}
+.rp-pos-veg {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-left: 4px;
+    border-radius: 50%;
+    background: #16a34a;
+    vertical-align: middle;
+}
+
+.rp-pos-cart {
+    position: sticky;
+    top: 46px;
+}
+.rp-cart-rows {
+    max-height: 34vh;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+.rp-cart-row {
+    border: 1px solid #eef2f6;
+    border-radius: 8px;
+    padding: 7px 8px;
+    margin-bottom: 6px;
+    background: #fbfcfe;
+}
+.rp-cart-top {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 5px;
+}
+.rp-cart-top .rp-cart-name {
+    border: 0;
+    background: transparent;
+    font-weight: 600;
+    padding-left: 0;
+    box-shadow: none;
+}
+.rp-cart-bot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.rp-qty {
+    display: flex;
+    align-items: center;
+    flex: 0 0 96px;
+}
+.rp-qty .rp-cart-qty {
+    width: 40px;
+    text-align: center;
+    border-radius: 0;
+}
+.rp-price-wrap {
+    flex: 1 1 auto;
+    max-width: 120px;
+}
+.rp-cart-line-total {
+    margin-left: auto;
+    font-weight: 700;
+    font-size: 0.84rem;
+    white-space: nowrap;
+}
+.rp-pos-charges {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 8px 10px;
+}
+.rp-pos-totals {
+    font-size: 0.9rem;
+}
+.rp-pos-grand {
+    font-size: 1.15rem;
+    color: #e67e22;
+}
