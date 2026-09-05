@@ -1,0 +1,28 @@
+.rp-menu-card {
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.rp-menu-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,.12) !important;
+}
+.rp-menu-card .card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+.rp-menu-price {
+    font-size: 1.1rem;
+    color: #e67e22;
+}
+.rp-menu-tags .badge {
+    font-size: 0.7rem;
+    margin-left: 4px;
+}
+.rp-menu-filters .btn {
+    border-radius: 20px;
+    margin: 0 4px 8px;
+}
+.rp-menu-search {
+    max-width: 400px;
+}

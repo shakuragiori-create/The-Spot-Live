@@ -1,0 +1,14 @@
+# These files contain a full database export (including hashed
+# passwords). wp-content/uploads/ is served directly by the web
+# server, so without this block anyone who guesses/finds a filename
+# here could download your database. Block direct access entirely —
+# only WP Admin → Backup → "Download Backup Now" (which goes through
+# PHP, not a direct file request) should ever serve these.
+
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
