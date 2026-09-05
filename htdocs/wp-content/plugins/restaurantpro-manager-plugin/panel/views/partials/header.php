@@ -427,7 +427,7 @@ window.RPNotifications = {
             var swUrl = <?php echo wp_json_encode( home_url( '/panel/pwa-sw' ) ); ?>;
             var panelUrl = <?php echo wp_json_encode( home_url( '/panel/' ) ); ?>;
 
-            navigator.serviceWorker.register(swUrl + '?v=1.7.6', {
+            navigator.serviceWorker.register(swUrl + '?v=' + <?php echo wp_json_encode( RP_PLUGIN_VERSION ); ?>, {
                 scope: panelUrl
             }).then(function (registration) {
 
@@ -506,136 +506,10 @@ window.RPNotifications = {
 
 <script>
 window.RPLanguage=<?php echo wp_json_encode(get_user_meta($current_user->ID,'rp_panel_language',true) ?: 'en'); ?>;
-
-(function(){
-
-    var lang=window.RPLanguage||'en';
-
-    if(lang==='en') return;
-
-    var d={
-        'POS':'POS',
-        'Dashboard':'ड्यासबोर्ड',
-        'Orders':'अर्डरहरू',
-        'Kitchen':'किचेन',
-        'Tables':'टेबलहरू',
-        'Reservations':'आरक्षण',
-        'Accounts':'खाता',
-        'Reports':'रिपोर्टहरू',
-        'Menu':'मेनु',
-        'Gallery':'ग्यालरी',
-        'Staff':'कर्मचारी',
-        'Settings':'सेटिङहरू',
-        'Inventory':'स्टक व्यवस्थापन',
-        'Expenses':'खर्च',
-        'Cash Shift':'क्यास सिफ्ट',
-        'Activity Log':'गतिविधि लग',
-        'Backup':'ब्याकअप',
-        'Logout':'लगआउट',
-        'Install App':'एप इन्स्टल गर्नुहोस्',
-        'Staff Management':'कर्मचारी व्यवस्थापन',
-        'Staff & Security':'कर्मचारी र सुरक्षा',
-        'Add Staff Member':'कर्मचारी थप्नुहोस्',
-        'Display Name':'प्रदर्शन नाम',
-        'Password':'पासवर्ड',
-        'Role':'भूमिका',
-        'Phone':'फोन',
-        'Email':'इमेल',
-        'Designation':'पद',
-        'Monthly Salary':'मासिक तलब',
-        'Joining Date':'नियुक्ति मिति',
-        'Emergency Contact':'आपतकालीन सम्पर्क',
-        'Address':'ठेगाना',
-        'Set New Password':'नयाँ पासवर्ड सेट गर्नुहोस्',
-        'Save Staff Details':'कर्मचारी विवरण सुरक्षित गर्नुहोस्',
-        'Record Leave':'बिदा दर्ता गर्नुहोस्',
-        'From':'देखि',
-        'To':'सम्म',
-        'Type':'प्रकार',
-        'Status':'स्थिति',
-        'Reason':'कारण',
-        'Save Leave':'बिदा सुरक्षित गर्नुहोस्',
-        'Leave History':'बिदा इतिहास',
-        'No leave records yet.':'अहिलेसम्म बिदा रेकर्ड छैन।',
-        'Add Inventory Item':'स्टक वस्तु थप्नुहोस्',
-        'Item name':'वस्तुको नाम',
-        'Opening stock':'सुरुवाती स्टक',
-        'Reorder level':'पुनः अर्डर स्तर',
-        'Cost price':'लागत मूल्य',
-        'Sell price':'बिक्री मूल्य',
-        'Add Item':'वस्तु थप्नुहोस्',
-        'Stock Movement':'स्टक परिवर्तन',
-        'Stock In':'स्टक भित्र',
-        'Stock Out':'स्टक बाहिर',
-        'Set Stock':'स्टक सेट गर्नुहोस्',
-        'Quantity':'परिमाण',
-        'Save Movement':'परिवर्तन सुरक्षित गर्नुहोस्',
-        'Current Stock':'हालको स्टक',
-        'LOW':'कम',
-        'Record Expense':'खर्च दर्ता गर्नुहोस्',
-        'Category':'श्रेणी',
-        'Description':'विवरण',
-        'Amount':'रकम',
-        'Reference':'सन्दर्भ',
-        'Save Expense':'खर्च सुरक्षित गर्नुहोस्',
-        'Recent Expenses':'हालका खर्च',
-        'Cash Shift & Day Closing':'क्यास सिफ्ट र दिन बन्द',
-        'Open Cash Shift':'क्यास सिफ्ट खोल्नुहोस्',
-        'Opening cash (Rs.)':'सुरुवाती नगद (रु.)',
-        'Open Shift':'सिफ्ट खोल्नुहोस्',
-        'Current Open Shift':'हालको खुला सिफ्ट',
-        'Actual cash counted (Rs.)':'गनिएको नगद (रु.)',
-        'Closing notes':'बन्द गर्ने नोट',
-        'Close Day':'दिन बन्द गर्नुहोस्',
-        'Shift History':'सिफ्ट इतिहास',
-        'Backup & Restore':'ब्याकअप र रिस्टोर',
-        'Download Backup Now':'अहिले ब्याकअप डाउनलोड गर्नुहोस्',
-        'Create Server Backup':'सर्भर ब्याकअप बनाउनुहोस्',
-        'Important':'महत्त्वपूर्ण',
-        'English':'अंग्रेजी',
-        'नेपाली':'नेपाली'
-    };
-
-    function walk(n){
-
-        if(n.nodeType===3){
-
-            var t=n.nodeValue.trim();
-
-            if(d[t]){
-                n.nodeValue=n.nodeValue.replace(t,d[t]);
-            }
-
-            return;
-        }
-
-        if(n.nodeType!==1) return;
-
-        ['placeholder','title','aria-label'].forEach(function(a){
-
-            if(
-                n.hasAttribute(a) &&
-                d[n.getAttribute(a)]
-            ){
-                n.setAttribute(
-                    a,
-                    d[n.getAttribute(a)]
-                );
-            }
-
-        });
-
-        Array.prototype.forEach.call(
-            n.childNodes,
-            walk
-        );
-
-    }
-
-    walk(document.body);
-
-})();
 </script>
+<?php if ( (get_user_meta($current_user->ID,'rp_panel_language',true) ?: 'en') !== 'en' ) : ?>
+<script src="<?php echo esc_url( RP_PLUGIN_URL . 'panel/js/translations.js' ); ?>?v=<?php echo RP_PLUGIN_VERSION; ?>"></script>
+<?php endif; ?>
 
 <!-- Main Content -->
 <main class="panel-main">

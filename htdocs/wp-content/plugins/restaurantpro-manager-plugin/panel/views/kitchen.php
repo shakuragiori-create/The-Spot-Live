@@ -69,7 +69,7 @@ unset( $kot );
         <?php endforeach; ?>
     <?php else : ?>
         <div class="empty-state" style="grid-column:1/-1">
-            <div class="empty-icon">✅</div>
+            <div class="empty-icon"><?php echo rp_panel_icon('flame'); ?></div>
             <p>All caught up! No pending orders.</p>
         </div>
     <?php endif; ?>

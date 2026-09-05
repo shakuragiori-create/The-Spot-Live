@@ -121,6 +121,16 @@ class RP_Database {
             KEY created_at (created_at)
         ) $charset;";
 
+        $sql .= "CREATE TABLE {$wpdb->prefix}rp_staff_permissions (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            user_id bigint(20) unsigned NOT NULL,
+            page_slug varchar(50) NOT NULL,
+            allowed tinyint(1) NOT NULL DEFAULT 1,
+            PRIMARY KEY  (id),
+            UNIQUE KEY user_page (user_id, page_slug),
+            KEY user_id (user_id)
+        ) $charset;";
+
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta( $sql );
         if ( class_exists( 'RP_Accounts' ) ) { RP_Accounts::create_tables(); }
@@ -149,6 +159,7 @@ class RP_Database {
             'rp_inventory_movements',
             'rp_inventory_items',
             'rp_expenses',
+            'rp_staff_permissions',
         ];
         foreach ( $tables as $table ) {
             $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}{$table}" );

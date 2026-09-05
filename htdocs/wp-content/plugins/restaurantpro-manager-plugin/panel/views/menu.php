@@ -124,6 +124,6 @@ $menu_items = get_posts([
         </div>
     <?php endforeach; ?>
     <?php if ( ! $menu_items ) : ?>
-        <div class="empty-state"><div class="empty-icon">🍽️</div><p>No menu items yet</p></div>
+        <div class="empty-state"><div class="empty-icon"><?php echo rp_panel_icon('book-open'); ?></div><p>No menu items yet</p></div>
     <?php endif; ?>
 </div>

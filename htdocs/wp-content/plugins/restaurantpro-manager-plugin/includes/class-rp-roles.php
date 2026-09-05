@@ -14,9 +14,31 @@ class RP_Roles {
         'rp_view_reports',
         'rp_manage_staff',
         'rp_manage_reservations',
+        'rp_manage_permissions',
+        'rp_view_system_health',
     ];
 
     private static array $roles = [
+        'rp_super_admin' => [
+            'label' => 'Super Admin',
+            'caps'  => [
+                'read'                   => true,
+                'upload_files'           => true,
+                'edit_posts'             => true,
+                'rp_manage_menu'         => true,
+                'rp_manage_orders'       => true,
+                'rp_view_orders'         => true,
+                'rp_manage_tables'       => true,
+                'rp_manage_kot'          => true,
+                'rp_view_kot'            => true,
+                'rp_manage_settings'     => true,
+                'rp_view_reports'        => true,
+                'rp_manage_staff'        => true,
+                'rp_manage_reservations' => true,
+                'rp_manage_permissions'  => true,
+                'rp_view_system_health'  => true,
+            ],
+        ],
         'rp_restaurant_admin' => [
             'label' => 'Restaurant Admin',
             'caps'  => [

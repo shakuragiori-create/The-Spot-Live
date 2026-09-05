@@ -2,10 +2,6 @@
     'use strict';
 
     // ========== ORDERS LIST — LIVE SYNC WITH POS ==========
-    // The Orders page (#rpOrdersList / #rpOrdersSyncState) ships with all the markup
-    // and window.rpOrdersData (ajaxUrl/nonce/date/status) needed to poll rp_orders_sync,
-    // but nothing was wired up to actually call it — so new POS orders never appeared
-    // here without a manual page reload. This restores that polling loop.
     (function initOrdersSync() {
         var list = document.getElementById('rpOrdersList');
         var syncState = document.getElementById('rpOrdersSyncState');
@@ -22,7 +18,7 @@
 
         function renderOrders(orders) {
             if (!orders.length) {
-                list.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>No orders found for this date</p></div>';
+                list.innerHTML = '<div class="empty-state"><div class="empty-icon"><svg width="40" height="40" fill="none" stroke="#bbb" stroke-width="1.5"><rect x="6" y="6" width="14" height="14" rx="2"/><rect x="24" y="6" width="14" height="14" rx="2"/><rect x="6" y="24" width="14" height="14" rx="2"/><rect x="24" y="24" width="14" height="14" rx="2"/></svg></div><p>No orders found for this date</p></div>';
                 return;
             }
             list.innerHTML = orders.map(function(o) {
@@ -37,10 +33,9 @@
                     '<div class="order-meta"><div class="order-meta-top">' +
                         '<span class="badge badge-' + esc(o.status) + '">' + statusLabel + '</span>' +
                         paidBadge + tableBadge +
-                    '</div><span class="text-sm text-muted">' + esc(o.time_label) + ' • ' + esc(o.customer_name || 'Walk-in Customer') + '</span></div>' +
+                    '</div><span class="text-sm text-muted">' + esc(o.time_label) + ' &bull; ' + esc(o.customer_name || 'Walk-in Customer') + '</span></div>' +
                     '<span style="display:flex;align-items:center;gap:8px">' +
                         '<span class="order-total">Rs.' + Math.round(o.total).toLocaleString('en-NP') + '</span>' +
-                        '<span class="btn btn-sm btn-outline" data-bill="' + esc(o.bill_url) + '">🧾</span>' +
                     '</span></a>';
             }).join('');
         }
@@ -59,7 +54,7 @@
                 .then(function(res) {
                     if (!res || !res.success) return;
                     renderOrders(res.data.orders || []);
-                    if (syncState) syncState.textContent = 'Synced with POS • ' + (res.data.count || 0) + ' order(s)';
+                    if (syncState) syncState.textContent = 'Synced • ' + (res.data.count || 0) + ' order(s)';
                 })
                 .catch(function() {
                     if (syncState) syncState.textContent = 'Sync paused — retrying…';
@@ -112,7 +107,7 @@
         });
     }
 
-    // New Order: item management
+    // ========== NEW ORDER: SHARED ITEM MANAGEMENT & SUBMISSION ==========
     var form = document.getElementById('newOrderForm');
     if (!form) return;
 
@@ -122,14 +117,38 @@
     var selectedDiv = document.getElementById('selectedItems');
     var totalEl = document.getElementById('orderTotal');
     var submitBtn = document.getElementById('submitOrder');
+    var countLabel = document.getElementById('orderItemCountLabel');
 
-    // Add item buttons
+    // Mobile elements
+    var mobileCountEl = document.getElementById('mobileOrderCount');
+    var mobileTotalEl = document.getElementById('mobileOrderTotal');
+    var mobileSubmitBtn = document.getElementById('mobileSubmitOrder');
+
+    // Add item buttons — use event delegation for touch compatibility
     document.querySelectorAll('.add-item-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             var row = btn.closest('.menu-pick-item');
             var id = row.dataset.id;
             var price = parseFloat(row.dataset.price);
             var name = row.dataset.name;
+
+            if (!items[id]) {
+                items[id] = { name: name, price: price, qty: 0 };
+            }
+            items[id].qty++;
+            renderItems();
+        });
+    });
+
+    // Also allow tapping the whole menu item card on mobile
+    document.querySelectorAll('.menu-pick-item').forEach(function(el) {
+        el.addEventListener('click', function(e) {
+            if (e.target.closest('.add-item-btn') || e.target.closest('.qty-btn')) return;
+            var id = el.dataset.id;
+            var price = parseFloat(el.dataset.price);
+            var name = el.dataset.name;
 
             if (!items[id]) {
                 items[id] = { name: name, price: price, qty: 0 };
@@ -172,6 +191,7 @@
         var html = '';
         var total = 0;
         var count = 0;
+        var itemCount = 0;
 
         Object.keys(items).forEach(function(id) {
             var item = items[id];
@@ -179,6 +199,7 @@
             var sub = item.price * item.qty;
             total += sub;
             count++;
+            itemCount += item.qty;
             html += '<div class="selected-item">' +
                 '<div class="qty-controls">' +
                 '<button type="button" class="qty-btn" data-id="' + id + '" data-dir="-1">−</button>' +
@@ -195,9 +216,27 @@
         itemsCard.style.display = count > 0 ? '' : 'none';
         submitBtn.disabled = count === 0;
 
+        // Update count label on desktop
+        if (countLabel) {
+            countLabel.textContent = itemCount + ' item' + (itemCount !== 1 ? 's' : '');
+        }
+
+        // Update mobile order bar — always keep in sync
+        if (mobileCountEl) {
+            mobileCountEl.textContent = itemCount + ' item' + (itemCount !== 1 ? 's' : '');
+        }
+        if (mobileTotalEl) {
+            mobileTotalEl.textContent = 'Rs.' + total;
+        }
+        if (mobileSubmitBtn) {
+            mobileSubmitBtn.disabled = count === 0;
+        }
+
         // Rebind qty buttons
         selectedDiv.querySelectorAll('.qty-btn').forEach(function(b) {
-            b.addEventListener('click', function() {
+            b.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 var id = b.dataset.id;
                 var dir = parseInt(b.dataset.dir);
                 if (items[id]) {
@@ -209,16 +248,26 @@
         });
     }
 
-    // Submit order
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Creating...';
-
+    // ========== SHARED ORDER SUBMISSION FUNCTION ==========
+    // Both desktop and mobile Create Order buttons call this exact same function.
+    // Same AJAX endpoint, same nonce, same validation, same payload.
+    function submitNewOrder() {
         var orderItems = [];
         Object.keys(items).forEach(function(id) {
             orderItems.push({ menu_item_id: id, quantity: items[id].qty });
         });
+
+        if (orderItems.length === 0) {
+            return;
+        }
+
+        // Disable both buttons during submission
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating...';
+        if (mobileSubmitBtn) {
+            mobileSubmitBtn.disabled = true;
+            mobileSubmitBtn.textContent = 'Creating...';
+        }
 
         var fd = new FormData();
         fd.append('action', 'rp_create_order');
@@ -229,20 +278,49 @@
         fd.append('customer_phone', form.querySelector('[name=customer_phone]') ? form.querySelector('[name=customer_phone]').value : '');
         fd.append('items', JSON.stringify(orderItems));
 
-        fetch(data.ajaxUrl, { method: 'POST', body: fd })
+        fetch(data.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: fd })
             .then(function(r) { return r.json(); })
             .then(function(res) {
                 if (res.success) {
                     window.location.href = (res.data && res.data.redirect) ? res.data.redirect : data.redirectUrl;
                 } else {
                     alert((res.data && res.data.message) || 'Error creating order');
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Create Order';
+                    resetButtons();
                 }
             })
             .catch(function() {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Create Order';
+                resetButtons();
             });
+    }
+
+    function resetButtons() {
+        submitBtn.disabled = Object.keys(items).length === 0;
+        submitBtn.textContent = 'Create Order';
+        if (mobileSubmitBtn) {
+            mobileSubmitBtn.disabled = Object.keys(items).length === 0;
+            mobileSubmitBtn.textContent = 'Create Order';
+        }
+    }
+
+    // Desktop: form submit event
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        submitNewOrder();
     });
+
+    // Mobile: button click — calls the exact same submitNewOrder()
+    if (mobileSubmitBtn) {
+        mobileSubmitBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            submitNewOrder();
+        });
+
+        // Also handle touch events for mobile reliability
+        mobileSubmitBtn.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            submitNewOrder();
+        });
+    }
 })();

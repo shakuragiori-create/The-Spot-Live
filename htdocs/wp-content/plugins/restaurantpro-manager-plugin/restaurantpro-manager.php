@@ -3,7 +3,7 @@
  * Plugin Name: RestaurantPro Manager
  * Plugin URI:
  * Description: Complete restaurant management system — orders, KOT, tables, reservations, digital menu, and staff roles.
- * Version: 1.5.0
+ * Version: 2.0.0
  * Author: RestaurantPro
  * License: GPL v2 or later
  * Text Domain: restaurantpro
@@ -15,11 +15,11 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'RP_PLUGIN_VERSION', '1.7.6' );
+define( 'RP_PLUGIN_VERSION', '2.0.0' );
 define( 'RP_PLUGIN_FILE', __FILE__ );
 define( 'RP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'RP_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-define( 'RP_DB_VERSION', '1.5.1' );
+define( 'RP_DB_VERSION', '2.0.0' );
 
 require_once RP_PLUGIN_DIR . 'includes/class-rp-database.php';
 require_once RP_PLUGIN_DIR . 'includes/class-rp-roles.php';

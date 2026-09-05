@@ -8,7 +8,7 @@ $order = $wpdb->get_row( $wpdb->prepare(
 ) );
 
 if ( ! $order ) {
-    echo '<div class="empty-state"><div class="empty-icon">❌</div><p>Order not found.</p></div>';
+    echo '<div class="empty-state"><div class="empty-icon"><?php echo rp_panel_icon('clipboard'); ?></div><p>Order not found.</p></div>';
     return;
 }
 

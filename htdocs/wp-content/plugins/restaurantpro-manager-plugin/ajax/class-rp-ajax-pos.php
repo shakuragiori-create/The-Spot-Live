@@ -146,6 +146,7 @@ class RP_Ajax_Pos {
         }
 
         RP_Notifications::add( 'new_order', 'New POS Order', sprintf( 'Order %s was created on the POS.', $invoice_no ), $order_id );
+        RP_Activity::log( 'pos_order_created', sprintf( 'POS order %s created (Rs.%s)%s', $invoice_no, number_format( $calc['total'], 2 ), $pay_now ? ' — paid' : '' ), 'order', $order_id );
         if ( $pay_now ) RP_Notifications::add( 'payment', 'Payment Completed', sprintf( 'Order %s was paid: %s.', $invoice_no, RP_Billing::money( $calc['total'] ) ), $order_id );
         if ( ! empty( $_POST['send_kot'] ) ) RP_Notifications::add( 'order_kot', 'Order Sent to Kitchen', sprintf( 'Order %s is waiting in the kitchen.', $invoice_no ), $order_id );
 

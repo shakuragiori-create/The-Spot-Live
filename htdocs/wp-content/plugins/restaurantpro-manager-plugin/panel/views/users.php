@@ -1,9 +1,10 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) exit;
-if ( $role !== 'admin' ) { echo '<p class="text-danger">Access denied.</p>'; return; }
+if ( ! in_array( $role, [ 'admin', 'superadmin' ], true ) ) { echo '<p class="text-danger">Access denied.</p>'; return; }
 
 global $wpdb;
 $rp_roles = [
+    'rp_super_admin' => 'Super Admin',
     'rp_restaurant_admin' => 'Admin',
     'rp_manager' => 'Manager',
     'rp_cashier' => 'Cashier',
@@ -96,7 +97,63 @@ $leave_records = $wpdb->get_results( "SELECT l.*, u.display_name FROM {$leave_ta
             </div>
         </details>
     <?php endforeach; ?>
-    <?php if ( ! $staff_users ) : ?><div class="empty-state"><div class="empty-icon">👤</div><p>No staff members added yet</p></div><?php endif; ?>
+    <?php if ( ! $staff_users ) : ?><div class="empty-state"><div class="empty-icon"><?php echo rp_panel_icon('users'); ?></div><p>No staff members added yet</p></div><?php endif; ?>
+</div>
+
+<div class="p-card mt-16">
+    <h3 class="p-card-title mb-12" data-i18n="Menu Permissions">Menu Permissions</h3>
+    <p class="text-sm text-muted" style="margin-bottom:16px">Control which panel pages each staff member can access. Admins and Super Admins always have full access.</p>
+    <?php
+    $perm_table = $wpdb->prefix . 'rp_staff_permissions';
+    $perm_pages = [
+        'pos' => 'POS',
+        'dashboard' => 'Dashboard',
+        'orders' => 'Orders',
+        'kitchen' => 'Kitchen',
+        'tables' => 'Tables',
+        'reservations' => 'Reservations',
+        'messages' => 'Messages',
+        'reports' => 'Reports',
+        'accounts' => 'Accounts',
+        'menu' => 'Menu',
+        'gallery' => 'Gallery',
+        'inventory' => 'Inventory',
+        'expenses' => 'Expenses',
+        'shifts' => 'Cash Shift',
+    ];
+    $non_admin_roles = [ 'rp_manager', 'rp_cashier', 'rp_kitchen_staff', 'rp_waiter' ];
+    $perm_users = get_users([ 'role__in' => $non_admin_roles, 'orderby' => 'display_name' ]);
+    foreach ( $perm_users as $pu ) :
+        $existing = $wpdb->get_results( $wpdb->prepare( "SELECT page_slug, allowed FROM {$perm_table} WHERE user_id = %d", $pu->ID ), ARRAY_A );
+        $user_perms = [];
+        foreach ( $existing as $ep ) $user_perms[ $ep['page_slug'] ] = (int) $ep['allowed'];
+        $has_custom = ! empty( $existing );
+    ?>
+    <details style="border-bottom:1px solid #eee;padding:10px 0">
+        <summary style="cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none">
+            <strong><?php echo esc_html( $pu->display_name ); ?></strong>
+            <span class="text-sm text-muted">@<?php echo esc_html( $pu->user_login ); ?></span>
+            <span class="badge badge-<?php echo $has_custom ? 'new' : 'accepted'; ?>" style="margin-left:auto"><?php echo $has_custom ? 'Custom' : 'Default'; ?></span>
+        </summary>
+        <form method="post" style="margin-top:10px;padding:10px;background:#fafafa;border-radius:8px">
+            <?php wp_nonce_field( 'rp_permissions_action' ); ?>
+            <input type="hidden" name="rp_permissions_action" value="save">
+            <input type="hidden" name="perm_user_id" value="<?php echo (int) $pu->ID; ?>">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">
+                <?php foreach ( $perm_pages as $slug => $label ) :
+                    $checked = $has_custom ? ( ! empty( $user_perms[ $slug ] ) ) : true;
+                ?>
+                <label style="display:flex;align-items:center;gap:6px;font-size:.88rem;cursor:pointer">
+                    <input type="checkbox" name="perm_<?php echo esc_attr( $slug ); ?>" value="1" <?php checked( $checked ); ?>>
+                    <?php echo esc_html( $label ); ?>
+                </label>
+                <?php endforeach; ?>
+            </div>
+            <button class="btn btn-sm btn-primary" type="submit" style="margin-top:10px" data-i18n="Save Permissions">Save Permissions</button>
+        </form>
+    </details>
+    <?php endforeach; ?>
+    <?php if ( empty( $perm_users ) ) : ?><p class="text-muted">No non-admin staff to configure.</p><?php endif; ?>
 </div>
 
 <div class="p-card mt-16">

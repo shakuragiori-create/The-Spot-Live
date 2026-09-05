@@ -46,6 +46,7 @@ class RP_Panel {
         add_rewrite_rule( '^panel/activity/?$', 'index.php?rp_panel=activity', 'top' );
         add_rewrite_rule( '^panel/backup/?$', 'index.php?rp_panel=backup', 'top' );
         add_rewrite_rule( '^panel/backup/download/?$', 'index.php?rp_panel=backup-download', 'top' );
+        add_rewrite_rule( '^panel/system-health/?$', 'index.php?rp_panel=system-health', 'top' );
         // PWA install support: manifest + service worker must be served from
         // *inside* the /panel/ scope (see header.php) or Chrome on Android will
         // only ever offer "Add shortcut" instead of a real app install.
@@ -95,6 +96,7 @@ class RP_Panel {
             'panel/activity' => 'activity',
             'panel/backup' => 'backup',
             'panel/backup/download' => 'backup-download',
+            'panel/system-health' => 'system-health',
             'panel/pwa-manifest' => 'manifest',
             'panel/pwa-sw' => 'sw',
             'panel/pwa-check' => 'pwa-check',
@@ -138,6 +140,7 @@ class RP_Panel {
         }
 
         if ( $page === 'logout' ) {
+            RP_Activity::log( 'logout', 'User logged out', 'user', get_current_user_id() );
             wp_logout();
             wp_redirect( home_url( '/panel/login' ) );
             exit;
@@ -176,6 +179,9 @@ class RP_Panel {
 
     private function get_user_role(): string {
         $user = wp_get_current_user();
+        if ( in_array( 'rp_super_admin', $user->roles, true ) ) {
+            return 'superadmin';
+        }
         if ( in_array( 'administrator', $user->roles, true ) || in_array( 'rp_restaurant_admin', $user->roles, true ) ) {
             return 'admin';
         }
@@ -206,48 +212,80 @@ class RP_Panel {
     }
 
     private function get_allowed_pages( string $role ): array {
-        return match ( $role ) {
-            'admin' => [ 'dashboard', 'pos', 'orders', 'order-new', 'order-view', 'kitchen', 'tables', 'reservations', 'reports', 'accounts', 'menu', 'gallery', 'users', 'messages', 'settings', 'inventory', 'expenses', 'shifts', 'activity', 'backup' ],
+        $base = match ( $role ) {
+            'superadmin' => [ 'dashboard', 'pos', 'orders', 'order-new', 'order-view', 'kitchen', 'tables', 'reservations', 'reports', 'accounts', 'menu', 'gallery', 'users', 'messages', 'settings', 'inventory', 'expenses', 'shifts', 'activity', 'backup', 'system-health' ],
+            'admin' => [ 'dashboard', 'pos', 'orders', 'order-new', 'order-view', 'kitchen', 'tables', 'reservations', 'reports', 'accounts', 'menu', 'gallery', 'users', 'messages', 'settings', 'inventory', 'expenses', 'shifts', 'activity', 'backup', 'system-health' ],
             'receptionist' => [ 'dashboard', 'pos', 'orders', 'order-new', 'order-view', 'tables', 'reservations', 'messages' ],
             'kitchen' => [ 'kitchen', 'messages' ],
             'waiter' => [ 'pos', 'orders', 'order-new', 'order-view', 'tables', 'messages' ],
             default => [],
         };
+
+        if ( in_array( $role, [ 'receptionist', 'kitchen', 'waiter' ], true ) ) {
+            $user_id = get_current_user_id();
+            $perms = $this->get_staff_permissions( $user_id );
+            if ( $perms !== null ) {
+                $base = array_filter( $base, function( $page ) use ( $perms ) {
+                    if ( in_array( $page, [ 'order-new', 'order-view' ], true ) ) {
+                        return isset( $perms['orders'] ) ? $perms['orders'] : true;
+                    }
+                    return isset( $perms[ $page ] ) ? $perms[ $page ] : true;
+                });
+                $base = array_values( $base );
+            }
+        }
+
+        return $base;
+    }
+
+    private function get_staff_permissions( int $user_id ): ?array {
+        global $wpdb;
+        $table = $wpdb->prefix . 'rp_staff_permissions';
+        if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table}'" ) !== $table ) {
+            return null;
+        }
+        $rows = $wpdb->get_results( $wpdb->prepare(
+            "SELECT page_slug, allowed FROM {$table} WHERE user_id = %d", $user_id
+        ), ARRAY_A );
+        if ( empty( $rows ) ) return null;
+        $perms = [];
+        foreach ( $rows as $row ) {
+            $perms[ $row['page_slug'] ] = (bool) $row['allowed'];
+        }
+        return $perms;
     }
 
     public function get_nav_items( string $role ): array {
         $items = [];
         $base = home_url( '/panel' );
+        $is_admin = in_array( $role, [ 'admin', 'superadmin' ], true );
 
-        // POS - First and most important!
         $items[] = [ 'url' => "$base/pos", 'icon' => 'dollar-sign', 'label' => 'POS', 'page' => 'pos' ];
 
-        if ( in_array( $role, [ 'admin', 'receptionist' ], true ) ) {
+        if ( $is_admin || $role === 'receptionist' ) {
             $items[] = [ 'url' => $base, 'icon' => 'grid', 'label' => 'Dashboard', 'page' => 'dashboard' ];
         }
 
-        if ( in_array( $role, [ 'admin', 'receptionist', 'waiter' ], true ) ) {
+        if ( $is_admin || in_array( $role, [ 'receptionist', 'waiter' ], true ) ) {
             $items[] = [ 'url' => "$base/orders", 'icon' => 'clipboard', 'label' => 'Orders', 'page' => 'orders' ];
         }
-        if ( in_array( $role, [ 'admin', 'receptionist', 'kitchen', 'waiter' ], true ) ) {
+        if ( $is_admin || in_array( $role, [ 'receptionist', 'kitchen', 'waiter' ], true ) ) {
             $items[] = [ 'url' => "$base/messages", 'icon' => 'message', 'label' => 'Messages', 'page' => 'messages' ];
         }
 
-
-        if ( in_array( $role, [ 'admin', 'kitchen' ], true ) ) {
+        if ( $is_admin || $role === 'kitchen' ) {
             $items[] = [ 'url' => "$base/kitchen", 'icon' => 'flame', 'label' => 'Kitchen', 'page' => 'kitchen' ];
         }
 
-        if ( in_array( $role, [ 'admin', 'receptionist', 'waiter' ], true ) ) {
+        if ( $is_admin || in_array( $role, [ 'receptionist', 'waiter' ], true ) ) {
             $items[] = [ 'url' => "$base/tables", 'icon' => 'layout', 'label' => 'Tables', 'page' => 'tables' ];
         }
 
-        if ( in_array( $role, [ 'admin', 'receptionist' ], true ) ) {
+        if ( $is_admin || $role === 'receptionist' ) {
             $items[] = [ 'url' => "$base/reservations", 'icon' => 'calendar', 'label' => 'Reservations', 'page' => 'reservations' ];
         }
 
-        // Accounts - Admin only
-        if ( $role === 'admin' ) {
+        if ( $is_admin ) {
             $items[] = [ 'url' => "$base/accounts", 'icon' => 'bar-chart', 'label' => 'Accounts', 'page' => 'accounts' ];
             $items[] = [ 'url' => "$base/reports", 'icon' => 'grid', 'label' => 'Reports', 'page' => 'reports' ];
             $items[] = [ 'url' => "$base/menu", 'icon' => 'book-open', 'label' => 'Menu', 'page' => 'menu' ];
@@ -259,6 +297,20 @@ class RP_Panel {
             $items[] = [ 'url' => "$base/shifts", 'icon' => 'clock', 'label' => 'Cash Shift', 'page' => 'shifts' ];
             $items[] = [ 'url' => "$base/activity", 'icon' => 'activity', 'label' => 'Activity Log', 'page' => 'activity' ];
             $items[] = [ 'url' => "$base/backup", 'icon' => 'download', 'label' => 'Backup', 'page' => 'backup' ];
+            $items[] = [ 'url' => "$base/system-health", 'icon' => 'activity', 'label' => 'System Health', 'page' => 'system-health' ];
+        }
+
+        if ( ! $is_admin ) {
+            $user_id = get_current_user_id();
+            $perms = $this->get_staff_permissions( $user_id );
+            if ( $perms !== null ) {
+                $items = array_filter( $items, function( $item ) use ( $perms ) {
+                    $page = $item['page'];
+                    if ( in_array( $page, [ 'order-new', 'order-view' ], true ) ) $page = 'orders';
+                    return isset( $perms[ $page ] ) ? $perms[ $page ] : true;
+                });
+                $items = array_values( $items );
+            }
         }
 
         return $items;
@@ -356,7 +408,7 @@ class RP_Panel {
         status_header( 200 );
         header( 'Content-Type: application/javascript; charset=utf-8' );
         header( 'Service-Worker-Allowed: /panel/' );
-        echo "const CACHE_NAME = 'the-spot-panel-v1-7-6';\n\n"
+        echo "const CACHE_NAME = 'the-spot-panel-v2-0-0';\n\n"
             . "self.addEventListener('install', event => {\n    self.skipWaiting();\n});\n\n"
             . "self.addEventListener('activate', event => {\n    event.waitUntil(self.clients.claim());\n});\n\n"
             . "self.addEventListener('fetch', event => {\n    const url = new URL(event.request.url);\n    if (url.pathname.startsWith('/panel/')) { event.respondWith(fetch(event.request, {cache:'no-store'})); }\n});\n";
@@ -460,6 +512,7 @@ class RP_Panel {
                 ];
                 $user = wp_signon( $creds, is_ssl() );
                 if ( ! is_wp_error( $user ) ) {
+                    RP_Activity::log( 'login', 'User logged in', 'user', $user->ID );
                     wp_redirect( home_url( '/panel' ) );
                     exit;
                 }
@@ -496,7 +549,8 @@ class RP_Panel {
     }
 
     private function process_form( string $page, string $role ): void {
-        if ( $role === 'admin' ) { $this->maybe_set_default_staff_name(); }
+        $is_admin_role = in_array( $role, [ 'admin', 'superadmin' ], true );
+        if ( $is_admin_role ) { $this->maybe_set_default_staff_name(); }
         if ( $_SERVER['REQUEST_METHOD'] !== 'POST' ) return;
 
         global $wpdb;
@@ -537,7 +591,7 @@ class RP_Panel {
             }
         }
 
-        if ( $page === 'accounts' && $role === 'admin' && isset( $_POST['rp_account_action'] ) ) {
+        if ( $page === 'accounts' && $is_admin_role && isset( $_POST['rp_account_action'] ) ) {
             if ( ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'rp_accounts_action' ) ) wp_die( 'Security check failed.' );
             $action = sanitize_text_field( $_POST['rp_account_action'] );
             if ( $action === 'add_account' ) {
@@ -592,7 +646,7 @@ class RP_Panel {
             }
             $action = sanitize_text_field( $_POST['rp_table_action'] );
 
-            if ( $action === 'add' && $role === 'admin' ) {
+            if ( $action === 'add' && $is_admin_role ) {
                 $name = sanitize_text_field( $_POST['table_name'] ?? '' );
                 $capacity = absint( $_POST['capacity'] ?? 4 );
                 if ( $name ) {
@@ -606,7 +660,7 @@ class RP_Panel {
                 if ( $id && class_exists( 'RP_Notifications' ) ) {
                     RP_Notifications::add( 'table', 'Table Added', sprintf( 'Table #%d was added.', $id ) );
                 }
-            } elseif ( $action === 'delete' && $role === 'admin' ) {
+            } elseif ( $action === 'delete' && $is_admin_role ) {
                 $id = absint( $_POST['table_id'] ?? 0 );
                 if ( $id ) {
                     $wpdb->delete( $wpdb->prefix . 'rp_tables', [ 'id' => $id ] );
@@ -690,7 +744,7 @@ class RP_Panel {
             exit;
         }
 
-        if ( $page === 'gallery' && isset( $_POST['rp_gallery_action'] ) && $role === 'admin' ) {
+        if ( $page === 'gallery' && isset( $_POST['rp_gallery_action'] ) && $is_admin_role ) {
             if ( ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'rp_gallery_action' ) ) {
                 wp_die( 'Security check failed.' );
             }
@@ -883,10 +937,10 @@ class RP_Panel {
         }
 
         if ( $page === 'users' && isset( $_POST['rp_user_action'] ) ) {
-            if ( $role !== 'admin' || ! current_user_can( 'rp_manage_staff' ) ) wp_die( 'Access denied.' );
+            if ( ! $is_admin_role || ! current_user_can( 'rp_manage_staff' ) ) wp_die( 'Access denied.' );
             if ( ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'rp_users_action' ) ) wp_die( 'Security check failed.' );
             $action = sanitize_text_field( $_POST['rp_user_action'] );
-            $rp_roles = [ 'rp_restaurant_admin', 'rp_manager', 'rp_cashier', 'rp_kitchen_staff', 'rp_waiter' ];
+            $rp_roles = [ 'rp_super_admin', 'rp_restaurant_admin', 'rp_manager', 'rp_cashier', 'rp_kitchen_staff', 'rp_waiter' ];
 
             if ( $action === 'add' ) {
                 $username = sanitize_user( $_POST['username'] ?? '' );
@@ -941,27 +995,44 @@ class RP_Panel {
             wp_redirect( home_url( '/panel/users?saved=1' ) ); exit;
         }
 
-        if ( $page === 'inventory' && isset($_POST['rp_inventory_action']) && $role === 'admin' ) {
+        if ( $page === 'inventory' && isset($_POST['rp_inventory_action']) && $is_admin_role ) {
             if(!wp_verify_nonce($_POST['_wpnonce']??'','rp_inventory_action')) wp_die('Security check failed.');
             $a=sanitize_text_field($_POST['rp_inventory_action']); $t=$wpdb->prefix;
             if($a==='add_item') $wpdb->insert($t.'rp_inventory_items',['name'=>sanitize_text_field($_POST['name']??''),'sku'=>sanitize_text_field($_POST['sku']??''),'unit'=>sanitize_text_field($_POST['unit']??'pcs'),'stock_qty'=>(float)($_POST['stock_qty']??0),'reorder_level'=>(float)($_POST['reorder_level']??0),'cost_price'=>(float)($_POST['cost_price']??0),'sell_price'=>(float)($_POST['sell_price']??0)]);
             if($a==='movement'){ $id=absint($_POST['item_id']??0);$qty=max(0,(float)($_POST['qty']??0));$type=in_array($_POST['movement_type']??'in',['in','out','adjust'],true)?$_POST['movement_type']:'in'; if($id&&$qty>0){$item=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$t}rp_inventory_items WHERE id=%d",$id));if($item){$new=$type==='in'?(float)$item->stock_qty+$qty:($type==='out'?(float)$item->stock_qty-$qty:$qty);$new=max(0,$new);$wpdb->update($t.'rp_inventory_items',['stock_qty'=>$new],['id'=>$id]);$wpdb->insert($t.'rp_inventory_movements',['item_id'=>$id,'type'=>$type,'qty'=>$qty,'reference'=>sanitize_text_field($_POST['reference']??''),'notes'=>sanitize_text_field($_POST['notes']??''),'created_by'=>get_current_user_id()]);}} }
             RP_Activity::log('inventory_update','Inventory updated.','inventory'); wp_safe_redirect(home_url('/panel/inventory?saved=1')); exit;
         }
-        if ( $page === 'expenses' && isset($_POST['rp_expense_action']) && $role === 'admin' ) {
+        if ( $page === 'expenses' && isset($_POST['rp_expense_action']) && $is_admin_role ) {
             if(!wp_verify_nonce($_POST['_wpnonce']??'','rp_expense_action')) wp_die('Security check failed.');
             if(sanitize_text_field($_POST['rp_expense_action'])==='add') $wpdb->insert($wpdb->prefix.'rp_expenses',['expense_date'=>sanitize_text_field($_POST['expense_date']??current_time('Y-m-d')),'category'=>sanitize_text_field($_POST['category']??'Other'),'description'=>sanitize_text_field($_POST['description']??''),'amount'=>max(0,(float)($_POST['amount']??0)),'payment_method'=>sanitize_text_field($_POST['payment_method']??'cash'),'reference'=>sanitize_text_field($_POST['reference']??''),'created_by'=>get_current_user_id()]);
             RP_Activity::log('expense_added','Expense recorded.','expense'); wp_safe_redirect(home_url('/panel/expenses?saved=1')); exit;
         }
-        if ( $page === 'shifts' && isset($_POST['rp_shift_action']) && $role === 'admin' ) {
+        if ( $page === 'shifts' && isset($_POST['rp_shift_action']) && $is_admin_role ) {
             if(!wp_verify_nonce($_POST['_wpnonce']??'','rp_shift_action')) wp_die('Security check failed.'); $a=sanitize_text_field($_POST['rp_shift_action']);$t=$wpdb->prefix.'rp_cash_shifts';
             if($a==='open'){ $wpdb->insert($t,['user_id'=>get_current_user_id(),'shift_date'=>current_time('Y-m-d'),'opening_cash'=>max(0,(float)($_POST['opening_cash']??0)),'opened_at'=>current_time('mysql'),'status'=>'open']); }
             if($a==='close'){ $id=absint($_POST['shift_id']??0);$actual=max(0,(float)($_POST['actual_cash']??0));$sh=$wpdb->get_row($wpdb->prepare("SELECT * FROM $t WHERE id=%d",$id));if($sh){$expected=(float)$sh->opening_cash; $paid=$wpdb->get_var($wpdb->prepare("SELECT COALESCE(SUM(amount_paid),0) FROM {$wpdb->prefix}rp_orders WHERE paid_at IS NOT NULL AND DATE(paid_at)=%s AND payment_method='cash'",$sh->shift_date));$expected+=(float)$paid;$wpdb->update($t,['expected_cash'=>$expected,'actual_cash'=>$actual,'difference'=>$actual-$expected,'status'=>'closed','closed_at'=>current_time('mysql'),'notes'=>sanitize_textarea_field($_POST['notes']??'')],['id'=>$id]);}}
             RP_Activity::log('shift_update','Cash shift updated.','shift'); wp_safe_redirect(home_url('/panel/shifts')); exit;
         }
-        if ( $page === 'backup' && isset($_POST['rp_backup_action']) && $role === 'admin' ) {
+        if ( $page === 'backup' && isset($_POST['rp_backup_action']) && $is_admin_role ) {
             if(!wp_verify_nonce($_POST['_wpnonce']??'','rp_backup_action')) wp_die('Security check failed.'); RP_Backup::maybe_daily(); RP_Activity::log('backup_created','Database backup created.','backup'); wp_safe_redirect(home_url('/panel/backup?saved=1')); exit;
         }
+        if ( $page === 'users' && isset( $_POST['rp_permissions_action'] ) ) {
+            if ( ! current_user_can( 'rp_manage_staff' ) ) wp_die( 'Access denied.' );
+            if ( ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'rp_permissions_action' ) ) wp_die( 'Security check failed.' );
+            $uid = absint( $_POST['perm_user_id'] ?? 0 );
+            if ( $uid ) {
+                $table = $wpdb->prefix . 'rp_staff_permissions';
+                $wpdb->delete( $table, [ 'user_id' => $uid ] );
+                $pages = [ 'pos', 'dashboard', 'orders', 'kitchen', 'tables', 'reservations', 'messages', 'reports', 'accounts', 'menu', 'gallery', 'inventory', 'expenses', 'shifts' ];
+                foreach ( $pages as $p ) {
+                    $allowed = isset( $_POST['perm_' . $p ] ) ? 1 : 0;
+                    $wpdb->replace( $table, [ 'user_id' => $uid, 'page_slug' => $p, 'allowed' => $allowed ] );
+                }
+                RP_Activity::log( 'permissions_updated', 'Permissions updated for user #' . $uid, 'user', $uid );
+            }
+            wp_redirect( home_url( '/panel/users?saved=1' ) ); exit;
+        }
+
         if ( $page === 'settings' && isset( $_POST['rp_settings_save'] ) ) {
             if ( ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'rp_settings_save' ) ) {
                 wp_die( 'Security check failed.' );

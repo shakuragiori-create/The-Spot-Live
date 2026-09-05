@@ -21,7 +21,7 @@ $reservations = $wpdb->get_results(
                     <span class="badge badge-<?php echo esc_attr( $r->status ); ?>"><?php echo esc_html( ucfirst( $r->status ) ); ?></span>
                 </div>
                 <div style="display:flex;gap:16px;font-size:.82rem;color:var(--g);margin-bottom:8px">
-                    <span>📅 <?php echo esc_html( date( 'M j, Y', strtotime( $r->reservation_date ) ) ); ?></span>
+                    <span> <?php echo esc_html( date( 'M j, Y', strtotime( $r->reservation_date ) ) ); ?></span>
                     <span>⏰ <?php echo esc_html( date( 'g:i A', strtotime( $r->reservation_time ) ) ); ?></span>
                     <span>👥 <?php echo esc_html( $r->guests ); ?> guests</span>
                 </div>
@@ -48,7 +48,7 @@ $reservations = $wpdb->get_results(
         <?php endforeach; ?>
     <?php else : ?>
         <div class="empty-state">
-            <div class="empty-icon">📅</div>
+            <div class="empty-icon"></div>
             <p>No reservations yet</p>
         </div>
     <?php endif; ?>

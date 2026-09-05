@@ -147,6 +147,7 @@ class RP_Ajax_Orders {
         }
 
         RP_Notifications::add( 'new_order', 'New Order', sprintf( 'Order %s was created and sent to the kitchen.', $invoice_no ), $order_id );
+        RP_Activity::log( 'order_created', sprintf( 'Order %s created (Rs.%s)', $invoice_no, number_format( $calc['total'], 2 ) ), 'order', $order_id );
 
         wp_send_json_success( [
             'order_id'   => $order_id,
@@ -238,6 +239,8 @@ class RP_Ajax_Orders {
             }
         }
 
+        RP_Activity::log( 'order_status_changed', sprintf( 'Order #%d status changed to %s', $order_id, $status ), 'order', $order_id );
+
         wp_send_json_success( [ 'message' => 'Order updated.' ] );
     }
 
@@ -260,6 +263,7 @@ class RP_Ajax_Orders {
             'paid_at' => current_time( 'mysql' ),
         ], [ 'id' => $order_id ], [ '%f','%f','%s','%s' ], [ '%d' ] );
         RP_Notifications::add( 'payment', 'Payment Completed', sprintf( '%s was marked paid: %s.', $order->invoice_no ?: ('Order #'.$order_id), RP_Billing::money( $order->total ) ), $order_id );
+        RP_Activity::log( 'payment_received', sprintf( 'Order #%d paid via %s (Rs.%s)', $order_id, $method, number_format( (float) $order->total, 2 ) ), 'order', $order_id );
         wp_send_json_success( [ 'message' => 'Payment saved.', 'paid' => true ] );
     }
 

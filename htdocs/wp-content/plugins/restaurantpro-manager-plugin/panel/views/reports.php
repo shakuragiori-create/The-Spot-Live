@@ -113,8 +113,8 @@ $csv_url = wp_nonce_url(
 ?>
 
 <div class="flex-between mb-16">
-    <h1 class="page-title" style="margin-bottom:0">📊 Accounts & Reports</h1>
-    <a href="<?php echo esc_url( $csv_url ); ?>" class="btn btn-sm btn-outline">⬇ Download CSV</a>
+    <h1 class="page-title" style="margin-bottom:0">Accounts &amp; Reports</h1>
+    <a href="<?php echo esc_url( $csv_url ); ?>" class="btn btn-sm btn-outline">Download CSV</a>
 </div>
 
 <!-- Date Filter -->
@@ -190,7 +190,7 @@ $csv_url = wp_nonce_url(
 <div class="grid-2 mb-16">
     <!-- Table-wise Earnings -->
     <div class="p-card">
-        <h3 class="p-card-title">🍽️ Table-wise Earnings</h3>
+        <h3 class="p-card-title">Table-wise Earnings</h3>
         <div class="table-responsive">
             <table class="table table-sm">
                 <thead>
@@ -219,7 +219,7 @@ $csv_url = wp_nonce_url(
 
     <!-- Payment Methods -->
     <div class="p-card">
-        <h3 class="p-card-title">💳 Payment Methods</h3>
+        <h3 class="p-card-title">Payment Methods</h3>
         <div class="table-responsive">
             <table class="table table-sm">
                 <thead>
@@ -231,10 +231,10 @@ $csv_url = wp_nonce_url(
                 <tbody>
                     <?php
                     $methods = [
-                        'cash' => '💵 Cash',
+                        'cash' => 'Cash',
                         'esewa' => '📱 eSewa',
                         'khalti' => '📱 Khalti',
-                        'card' => '💳 Card',
+                        'card' => 'Card',
                         'qr' => '📷 QR',
                     ];
                     foreach ( $methods as $key => $label ) :
@@ -285,7 +285,7 @@ $csv_url = wp_nonce_url(
 
 <!-- Transaction Log -->
 <div class="p-card">
-    <h3 class="p-card-title">📋 Transaction Log</h3>
+    <h3 class="p-card-title">Transaction Log</h3>
     <div class="table-responsive">
         <table class="table">
             <thead>
@@ -341,7 +341,7 @@ $csv_url = wp_nonce_url(
                                 </span>
                             </td>
                             <td>
-                                <a href="<?php echo esc_url( $bill_url ); ?>" class="btn btn-sm btn-outline" target="_blank">🧾 View Bill</a>
+                                <a href="<?php echo esc_url( $bill_url ); ?>" class="btn btn-sm btn-outline" target="_blank">View Bill</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>

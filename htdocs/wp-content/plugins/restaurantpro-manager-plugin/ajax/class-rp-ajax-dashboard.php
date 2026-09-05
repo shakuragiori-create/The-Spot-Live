@@ -19,11 +19,11 @@ class RP_Ajax_Dashboard {
         global $wpdb;
         $today = current_time( 'Y-m-d' );
 
-        // Orders by hour today
         $hourly = $wpdb->get_results( $wpdb->prepare(
             "SELECT HOUR(created_at) as hour, COUNT(*) as count
              FROM {$wpdb->prefix}rp_orders
              WHERE DATE(created_at) = %s
+               AND LOWER(TRIM(status)) NOT IN ('cancelled','canceled')
              GROUP BY HOUR(created_at)
              ORDER BY hour",
             $today
@@ -65,6 +65,7 @@ class RP_Ajax_Dashboard {
             "SELECT HOUR(created_at) as hour, COUNT(*) as count
              FROM {$wpdb->prefix}rp_orders
              WHERE DATE(created_at) = %s
+               AND LOWER(TRIM(status)) NOT IN ('cancelled','canceled')
              GROUP BY HOUR(created_at)
              ORDER BY hour",
             $today

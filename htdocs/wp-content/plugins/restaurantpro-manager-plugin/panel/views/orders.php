@@ -42,9 +42,9 @@ $statuses = [ ''=>'All', 'new'=>'New', 'accepted'=>'Accepted', 'preparing'=>'Pre
 <a href="<?php echo esc_url(home_url('/panel/orders/'.(int)$o->id)); ?>" class="order-item rp-pay-order <?php echo $paid?'is-paid':'is-unpaid'; ?>" data-order-id="<?php echo (int)$o->id; ?>">
   <span class="order-num">#<?php echo (int)$o->id; ?></span>
   <div class="order-meta"><div class="order-meta-top"><span class="badge badge-<?php echo esc_attr($status); ?>"><?php echo esc_html($status==='cancelled'?'Cancelled':ucfirst($status)); ?></span><span class="badge" style="background:<?php echo $paid?'#dcfce7':'#fee2e2'; ?>;color:<?php echo $paid?'#166534':'#991b1b'; ?>"><?php echo $paid?'PAID':'NOT PAID'; ?></span><?php if($o->table_number): ?><span class="order-table">T<?php echo (int)$o->table_number; ?></span><?php endif; ?></div><span class="text-sm text-muted"><?php echo esc_html(wp_date('g:i:s A',strtotime($o->created_at))); ?> • <?php echo esc_html($o->customer_name?:'Walk-in Customer'); ?></span></div>
-  <span style="display:flex;align-items:center;gap:8px"><span class="order-total">Rs.<?php echo number_format((float)$o->total,0); ?></span><span class="btn btn-sm btn-outline" data-bill="<?php echo esc_url(home_url('/panel/bill/'.(int)$o->id)); ?>">🧾</span></span>
+  <span style="display:flex;align-items:center;gap:8px"><span class="order-total">Rs.<?php echo number_format((float)$o->total,0); ?></span><span class="btn btn-sm btn-outline" data-bill="<?php echo esc_url(home_url('/panel/bill/'.(int)$o->id)); ?>"></span></span>
 </a>
-<?php endforeach; else: ?><div class="empty-state"><div class="empty-icon">📋</div><p>No orders found for this date</p></div><?php endif; ?>
+<?php endforeach; else: ?><div class="empty-state"><div class="empty-icon"><?php echo rp_panel_icon('clipboard'); ?></div><p>No orders found for this date</p></div><?php endif; ?>
 </div>
 <a href="<?php echo esc_url(home_url('/panel/orders/new')); ?>" class="btn-fab" aria-label="New Order">+</a>
 <script>window.rpOrdersData=<?php echo wp_json_encode(['ajaxUrl'=>admin_url('admin-ajax.php'),'nonce'=>wp_create_nonce('rp_orders_nonce'),'date'=>$order_date,'status'=>$status_filter]); ?>;</script>

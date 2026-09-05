@@ -73,6 +73,7 @@ class RP_Ajax_Kitchen {
 
         $order_id_for_notice = (int) $wpdb->get_var( $wpdb->prepare( "SELECT order_id FROM {$wpdb->prefix}rp_kot WHERE id = %d", $kot_id ) );
         if ( $order_id_for_notice ) RP_Notifications::add( 'kitchen', $status === 'ready' ? 'Order Ready' : 'Kitchen Update', sprintf( 'KOT #%d is now %s.', $kot_id, ucwords( str_replace( '_', ' ', $status ) ) ), $order_id_for_notice );
+        RP_Activity::log( 'kot_status_changed', sprintf( 'KOT #%d status changed to %s', $kot_id, $status ), 'kot', $kot_id );
 
         wp_send_json_success( [ 'message' => 'KOT updated.' ] );
     }

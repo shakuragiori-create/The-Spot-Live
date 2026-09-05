@@ -208,7 +208,7 @@ $billing = RP_Billing::defaults();
             </div>
 
             <div class="pos-cart-footer">
-                <button type="button" class="btn btn-primary btn-lg btn-block" id="chargeBtn">💰 Charge & Print Bill</button>
+                <button type="button" class="btn btn-primary btn-lg btn-block" id="chargeBtn">Charge & Print Bill</button>
                 <button type="button" class="btn btn-outline btn-sm btn-block mt-8" id="holdBtn">Send to Kitchen (Unpaid)</button>
             </div>
 
